@@ -152,6 +152,31 @@
     section.card { padding: 26px 20px; border-radius: 18px; }
     .logo, .logo-fallback { width: 84px; height: 84px; border-radius: 22px; }
   }
+  /* ---------- 手机遥控配对（内联区块） ---------- */
+  .mz-label { display: block; font-size: .82rem; font-weight: 600; color: var(--muted); margin: 16px 0 7px; }
+  .mz-input {
+    width: 100%; padding: 13px 14px; font-size: 1rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    border: 1.5px solid var(--line); border-radius: 12px; outline: none; background: #f8f9fc; color: var(--ink);
+  }
+  .mz-input:focus { border-color: var(--c1); background: #fff; }
+  .mz-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .mz-btn { width: auto; min-width: 150px; text-align: center; }
+  .mz-err { font-size: .82rem; color: #dc2626; min-height: 1.1em; margin-top: 10px; }
+  .mz-row { display: flex; align-items: center; justify-content: space-between; font-size: .82rem; color: var(--muted); margin-top: 14px; }
+  .mz-pill { font-size: .72rem; padding: 3px 10px; border-radius: 999px; background: #eaf7ef; border: 1px solid #bfe6cd; color: #16794a; }
+  .mz-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.05rem; font-weight: 700;
+    letter-spacing: .3px; word-break: break-all; text-align: center; color: #2b3350;
+    background: #f4f6fc; border: 1.5px dashed #cfd6ea; border-radius: 12px; padding: 14px; margin: 10px 0 16px;
+  }
+  .mz-qrbox {
+    width: 220px; height: 220px; margin: 0 auto; padding: 12px; background: #fff;
+    border: 1.5px solid var(--line); border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .mz-qrbox img { width: 100%; height: 100%; display: block; }
+  @media (max-width: 520px) { .mz-qrbox { width: 188px; height: 188px; } .mz-btn { width: 100%; } }
 </style>
 </head>
 <body>
@@ -160,6 +185,7 @@
     <div class="brand">KDXZHX</div>
     <div class="links">
       <a href="/">应用集合</a>
+      <a href="#remote">手机遥控</a>
       <a href="#install">安装</a>
       <a href="#faq">常见问题</a>
       <a href="https://github.com/ndpysnythv-blip/MacKZ" target="_blank" rel="noopener">GitHub</a>
@@ -223,6 +249,45 @@
         <div class="feat"><div class="ico">🎚️</div><h4>手动预览</h4><p>没有角度传感器的机型也能用滑杆和「模拟合上 / 模拟打开」按钮体验完整动画。</p></div>
         <div class="feat"><div class="ico">📱</div><h4>手机遥控</h4><p>手机连同一个 Wi-Fi 就能远程控制折叠动画，演示给别人看非常方便。</p></div>
         <div class="feat"><div class="ico">🔄</div><h4>自动更新</h4><p>发现新版本自动弹窗提示，一键下载、替换并重启。</p></div>
+      </div>
+    </section>
+
+    <!-- 手机遥控配对 -->
+    <section class="card" id="remote">
+      <h2>手机遥控配对</h2>
+      <p class="lead">
+        手机和 Mac 连同一个 Wi-Fi，就能用手机当遥控器：合上 / 打开 / 播放一次开合 / 拖动进度。
+        下面这串<span class="hl">连接码</span>由 Mac 端实时生成，手机在本页输入即可配对。
+      </p>
+
+      <!-- 未配对 -->
+      <div id="mzSetup">
+        <label class="mz-label" for="mzCode">连接码</label>
+        <input id="mzCode" class="mz-input" type="text" autocomplete="off" autocapitalize="off"
+               spellcheck="false" placeholder="192.168.1.5:52800#836291">
+        <div class="mz-actions">
+          <button class="btn primary mz-btn" id="mzPair" type="button">配对</button>
+        </div>
+        <p class="mz-err" id="mzErr"></p>
+        <p class="note">
+          连接码在 Mac 的「MacKZ 设置 → 手机遥控」里，点 <b>复制连接码</b> 后粘到这里即可；<br>
+          也可以直接粘整串（形如 <b>192.168.1.5:52800#836291</b>）。手机与 Mac 必须在同一个 Wi-Fi。
+        </p>
+      </div>
+
+      <!-- 已配对 -->
+      <div id="mzPaired" hidden>
+        <div class="mz-row"><span>已配对 · 连接码</span><span class="mz-pill">就绪</span></div>
+        <div class="mz-code" id="mzCodeBig"></div>
+        <div class="mz-qrbox"><img id="mzQr" alt="配对二维码"></div>
+        <div class="mz-actions">
+          <a class="btn primary mz-btn" id="mzGo" href="#">在手机上打开控制页</a>
+          <button class="btn ghost mz-btn" id="mzReset" type="button">换一个连接码</button>
+        </div>
+        <p class="note">
+          二维码里就是 Mac 的局域网控制页地址，用手机相机扫一下直达；<br>
+          点按钮没反应时，多半是浏览器开着「仅限 HTTPS」，到「设置 → Safari → 高级」里关掉即可。
+        </p>
       </div>
     </section>
 
@@ -354,6 +419,99 @@
       document.body.removeChild(ta);
     }
   }
+</script>
+<script>
+/* 手机遥控配对：连接码 = ip:port#口令。
+   说明：https 页面无法用 fetch 直接请求局域网 http 服务（浏览器按「混合内容」拦截），
+   所以本页只做配对入口 —— 解析出 Mac 地址后用顶层跳转把手机送进本地控制页。 */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (!$('mzCode')) { return; }
+
+  // 解析连接码；分隔符兼容 # / @ / / / - 与空格，口令可省略
+  function parseCode(raw) {
+    var s = String(raw || '').trim().replace(/\s+/g, '');
+    if (!s) { return null; }
+    var eq = s.lastIndexOf('c=');          // 兼容整段带有 c= 的片段或完整 URL 粘贴
+    if (eq >= 0) { s = s.slice(eq + 2); }
+    try { s = decodeURIComponent(s); } catch (e) { /* 非法转义时按原文继续 */ }
+    var m = s.match(/^(\d{1,3}(?:\.\d{1,3}){3}):(\d{1,5})(?:[#@\/-]?(\d{1,6}))?$/);
+    if (!m) { return null; }
+    var ip = m[1], port = Number(m[2]), token = m[3] || '';
+    var parts = ip.split('.');
+    for (var i = 0; i < 4; i++) {
+      var n = Number(parts[i]);
+      if (!(n >= 0 && n <= 255)) { return null; }
+    }
+    if (!(port >= 1 && port <= 65535)) { return null; }
+    return { ip: ip, port: port, token: token };
+  }
+
+  // 控制页地址（Mac 本地 http 服务，口令沿用 t= 写法）
+  function controlURL(info) {
+    var url = 'http://' + info.ip + ':' + info.port + '/';
+    if (info.token) { url += '?t=' + encodeURIComponent(info.token); }
+    return url;
+  }
+
+  // 二维码走公开图片接口，失败自动换备用源；两个都挂掉时仍可用按钮跳转
+  function renderQR(target) {
+    var img = $('mzQr');
+    var encoded = encodeURIComponent(target);
+    img.onerror = function () {
+      if (img.dataset.fallback) { img.removeAttribute('src'); img.alt = '二维码加载失败，请点下面按钮直接打开'; return; }
+      img.dataset.fallback = '1';
+      img.src = 'https://api.pwmqr.com/qrcode/create/?url=' + encoded;
+    };
+    img.dataset.fallback = '';
+    img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=0&data=' + encoded;
+  }
+
+  function showPaired(info) {
+    var target = controlURL(info);
+    $('mzCodeBig').textContent = info.ip + ':' + info.port + (info.token ? '#' + info.token : '');
+    $('mzGo').href = target;
+    renderQR(target);
+    $('mzSetup').hidden = true;
+    $('mzPaired').hidden = false;
+    // 写回地址栏：刷新或把链接发给手机后仍能直接进入配对状态
+    try { history.replaceState(null, '', '#c=' + encodeURIComponent(info.ip + ':' + info.port + '#' + info.token)); } catch (e) {}
+  }
+
+  function reset() {
+    $('mzPaired').hidden = true;
+    $('mzSetup').hidden = false;
+    $('mzErr').textContent = '';
+    $('mzCode').value = '';
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    $('mzCode').focus();
+  }
+
+  $('mzPair').onclick = function () {
+    var info = parseCode($('mzCode').value);
+    if (!info) {
+      $('mzErr').textContent = '连接码不正确：应形如 192.168.1.5:52800#836291';
+      return;
+    }
+    $('mzErr').textContent = '';
+    showPaired(info);
+  };
+  $('mzCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') { $('mzPair').click(); } });
+  $('mzReset').onclick = reset;
+  // Mac 端「打开配对页」会把连接码放在 #c= 里直接带进来
+  var hash = location.hash || '';
+  if (hash.indexOf('#c=') === 0) {
+    var info = parseCode(hash.slice(3));
+    if (info) { showPaired(info); }
+  }
+  // 同一页面上再次带新连接码打开时（只换 hash 不刷新）也能重新配对
+  window.addEventListener('hashchange', function () {
+    if (location.hash.indexOf('#c=') === 0) {
+      var again = parseCode(location.hash.slice(3));
+      if (again) { showPaired(again); }
+    }
+  });
+})();
 </script>
 </body>
 </html>
